@@ -121,6 +121,7 @@ app.layout = html.Div(children=[
 	dcc.Interval(id='interval', interval=5, n_intervals=0),
 	html.Div(id='table')
 ])
+server = app.server
 
 @app.callback(
 	Output('table', 'children'),
@@ -215,3 +216,4 @@ def add_new_data(save, date, title, sign, desc, person, tags, others, public, mo
 
 if __name__ == '__main__':
 	app.run_server(port=8050, debug=True)
+	# app.run_server(port=8050, debug=False)

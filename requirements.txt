@@ -27,3 +27,4 @@ SQLAlchemy==1.4.20
 tenacity==7.0.0
 Werkzeug==2.0.1
 zope.interface==5.4.0
+gunicorn==20.1.0
