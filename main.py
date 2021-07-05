@@ -46,11 +46,11 @@ server = Flask(__name__)
 app = dash.Dash(__name__, title='Whole Life', update_title=None, server=server, suppress_callback_exceptions=True)
 app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123edcxzaqws@localhost/life' #local only
+# app.server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123edcxzaqws@localhost/life' #local only
 
 # for live Heroku PostgreSQL db
-# app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://kcfwfqwznavpjq:9473936daf43bff3d17c1dd8ab2c28144dfbf677\
-# 14cb30622e3017bbe55cdeac@ec2-34-197-188-147.compute-1.amazonaws.com:5432/d9eat64jon4dti"
+app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21" \
+                                               "@ec2-54-228-174-49.eu-west-1.compute.amazonaws.com:5432/d56rpgtdtdbf74"
 
 db = SQLAlchemy(app.server)
 
