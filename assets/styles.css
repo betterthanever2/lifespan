@@ -1,0 +1,64 @@
+.dropdown_single {
+    font-size: 14px;
+    display: inline;
+    float: left;
+    min-width: 280px;
+    width: 50%;
+    padding-right: 10px;
+    border-radius: 3px;
+    box-sizing: content-box;
+}
+
+.dropdown_multi {
+    font-size: 14px;
+    display: inline;
+    min-width: 280px;
+    width: 50%;
+    float: left;
+    /*margin-left: -3px;*/
+    border-radius: 3px;
+    padding-right: 10px;
+    box-sizing: content-box;
+}
+
+.desc {
+	margin-top: 5px;
+	padding: 5px;
+	font-size: 14px;
+	width: 98%;
+	border-radius: 3px;
+}
+
+.butt {
+	float: right;
+	margin: 10px 50px 15px 0px;
+}
+
+.datepicker {
+	display: flex;
+	float: left;
+	width: 25%;
+	border-radius: 3px;
+	font-size: 14px;
+	overflow: visible;
+}
+
+.dialog {
+	border-radius: 3px;
+	display: inline;
+	justify-content: left;
+	position: relative;
+	resize: vertical;
+	overflow: visible;
+	min-width: 550px;
+	width: 100%;
+	height: auto;
+}
+
+.fieldset {
+	width: auto;
+	border: 0;
+	overflow-y: visible;
+	resize: both;
+	display: block;
+}
