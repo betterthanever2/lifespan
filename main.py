@@ -171,10 +171,10 @@ def add_new_data(save, date, title, sign, desc, person, tags, others, public, mo
 		added_on = last_modified = dt.today()
 		added_by = 1 # TODO
 
-		assert person is not None
+		# assert person is not None
 		person_id = loud_equery(connect, f"""SELECT id FROM people WHERE (fname || ' ' || lname) = '{person}'""")[0][0]
 
-		assert others is not None
+		# assert others is not None
 		people_involved = []
 		for p in others:
 			people_involved.append(loud_equery(connect, f"""SELECT id FROM people WHERE (fname || ' ' || lname) = '{p}'""")[0][0])
@@ -185,13 +185,13 @@ def add_new_data(save, date, title, sign, desc, person, tags, others, public, mo
 		else:
 			pbl = False
 
-		assert sign is not None
+		# assert sign is not None
 		s = significance[sign]
 
 		# if date is not None and title is not None and desc is not None and person is not None:
-		assert title is not None
-		assert date is not None
-		assert desc is not None
+		# assert title is not None
+		# assert date is not None
+		# assert desc is not None
 		pg = pd.DataFrame(data=[(title, date, person_id, desc, json.dumps(tags), json.dumps(people_involved), pbl, added_on, added_by, last_modified, s)],
 		                  columns=['title', 'date', 'the_person', 'description', 'tags', 'people_involved', 'public', 'added_on', 'added_by', 'last_modified', 'significance'])
 		# else:
