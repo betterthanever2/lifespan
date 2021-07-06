@@ -49,7 +49,7 @@ app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # app.server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123edcxzaqws@localhost/life' #local only
 
 # for live Heroku PostgreSQL db
-app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgres://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21" \
+app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21" \
                                                "@ec2-54-228-174-49.eu-west-1.compute.amazonaws.com:5432/d56rpgtdtdbf74"
 
 db = SQLAlchemy(app.server)
