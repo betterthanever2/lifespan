@@ -137,16 +137,18 @@ def display_table(n_intervals):
 
 @app.callback(
 	Output('dialog', 'open'),
+	Output('add_new_record', 'n_clicks'),
+	Output('savior', 'n_clicks'),
 	Input('add_new_record', 'n_clicks'),
 	Input('savior', 'n_clicks'),
 	State('dialog', 'open')
 )
 def toggle_event_form(open_clicks, close_clicks, state):
 	if not state and (open_clicks > 0):
-		return True
+		return True, 1, 0
 	elif state and (close_clicks > 0):
 		sleep(1.5)
-		return False
+		return False, 0, 1
 
 @app.callback(
 	Output('message', 'children'),
