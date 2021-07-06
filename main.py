@@ -142,9 +142,9 @@ def display_table(n_intervals):
 	State('dialog', 'open')
 )
 def toggle_event_form(open_clicks, close_clicks, state):
-	if not state and open_clicks:
+	if not state and (open_clicks > 0):
 		return True
-	elif state and close_clicks:
+	elif state and (close_clicks > 0):
 		sleep(1.5)
 		return False
 
