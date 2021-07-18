@@ -1,6 +1,5 @@
 """
-Functions used to connect, query and modify the competition DB
-Modules required: psycopg2, psycopg2.OperationalError
+Functions used to connect, query and modify the events DB
 
 """
 import psycopg2

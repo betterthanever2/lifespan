@@ -4,218 +4,399 @@ import dash
 import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_bootstrap_components as bootstrap
 from connection import *
 from dash.dependencies import Input, Output, State
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import sd_material_ui as material
-from time import sleep
+# from time import sleep
 import json
 
 connect = create_connection()
 c = connect.cursor()
-#
-# # add user
-# add_user = """
-# INSERT INTO person(fname, lname) VALUES('Denis', 'Shvetsov')
-# """
-#
-# quiet_equery(connect, add_user)
-# # loud_equery(connect, table_names2)
-#
-# add_event = f"""
-# INSERT INTO events(time, title, description, user_id) VALUES ('{dt(1984,5,11,2,0,0)}', 'Birth', 'Was born in Mykolaiv', 1)
-# """
-#
-# quiet_equery(connect, add_event)
-#
-# all_events_q = """SELECT * FROM events"""
-# all_events = loud_equery(connect, all_events_q)
-# all_events_pd = pd.DataFrame(all_events, columns=['ID', 'Time', 'Title', 'Description', 'User'])
 
-######################################
+def name_for_id(uuid) -> str:
+    return loud_equery(connect,f"""SELECT (fname || ' ' || lname) FROM people WHERE id = '{uuid}'""")[0][0]
 
-ppl = '''SELECT (fname || ' ' || lname) "name" FROM people'''
-n = loud_equery(connect, ppl)
-names = [x[0] for x in n]
+def id_for_name(name) -> int:
+    return loud_equery(connect,f"""SELECT id FROM people WHERE (fname || ' ' || lname) = '{name}'""")[0][0]
 
-tags = ['fundamental', 'travel', 'education', 'birth of child', 'marriage', 'divorce', 'violence', 'state', 'work']
-significance = {'very': 1, 'not really': 3, 'regular': 2, 'irrelevant': 4}
+def display_human_date(timestamp):
+    return dt.strftime(timestamp, '%d.%m.%Y, %a')
+
+people_query = """SELECT (fname || ' ' || lname) FROM people"""
+people = loud_equery(connect, people_query)
+names = [name[0] for name in people]
+
+tags = [
+    "fundamental",
+    "travel",
+    "education",
+    "birth of child",
+    "marriage",
+    "divorce",
+    "violence",
+    "state",
+    "work",
+]
+significance = {1: "very", 3: "not really", 2: "somewhat", 4: "not at all"}
 
 server = Flask(__name__)
-app = dash.Dash(__name__, title='Whole Life', update_title=None, server=server, suppress_callback_exceptions=True)
-app.server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = dash.Dash(
+    __name__,
+    title="Whole Life",
+    update_title=None,
+    server=server,
+    suppress_callback_exceptions=True,
+    external_stylesheets=[bootstrap.themes.BOOTSTRAP]
+)
+app.server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # app.server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123edcxzaqws@localhost/life' #local only
 
 # for live Heroku PostgreSQL db
-app.server.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21" \
-                                               "@ec2-54-228-174-49.eu-west-1.compute.amazonaws.com:5432/d56rpgtdtdbf74"
+app.server.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21"
+    "@ec2-54-228-174-49.eu-west-1.compute.amazonaws.com:5432/d56rpgtdtdbf74"
+)
 
 db = SQLAlchemy(app.server)
 
 class Event(db.Model):
-	__tablename__ = 'events'
+    __tablename__ = "events"
 
-	Id = db.Column(db.Integer, nullable=False, primary_key=True)
-	Title = db.Column(db.String(80))
-	Date = db.Column(db.Date)
-	User_id = db.Column(db.Integer)
-	Description = db.Column(db.String(4000))
-	Tags = db.Column(db.String)
-	Others = db.Column(db.String)
-	Public = db.Column(db.Boolean)
-	Added_on = db.Column(db.Date)
-	Added_by = db.Column(db.Integer)
-	Last_modified = db.Column(db.Date)
-	Significance = db.Column(db.Integer)
+    Id = db.Column(db.Integer, nullable=False, primary_key=True)
+    Title = db.Column(db.String(80))
+    Date = db.Column(db.Date)
+    People_main = db.Column(db.String)
+    Description = db.Column(db.String(4000))
+    Tags = db.Column(db.String)
+    People_secondary = db.Column(db.String)
+    Public = db.Column(db.Boolean)
+    Added_on = db.Column(db.Date)
+    Added_by = db.Column(db.Integer)
+    Last_modified = db.Column(db.Date)
+    Significance = db.Column(db.Integer)
+    Location = db.Column(db.String)
 
-	def __init__(self, id, title, date, person_id, description, tags, others, public, added_on, added_by, last_modified, sign):
-		self.Id = id
-		self.Date = date
-		self.Title = title
-		self.Description = description
-		self.User_id = person_id
-		self.Tags = tags
-		self.Others = others
-		self.Public = public
-		self.Added_on = added_on
-		self.Added_by = added_by
-		self.Last_modified = last_modified
-		self.Significance = sign
+    def __init__(
+        self,
+        id,
+        title,
+        date,
+        people_main,
+        description,
+        tags,
+        people_secondary,
+        public,
+        added_on,
+        added_by,
+        last_modified,
+        sign,
+        location,
+    ):
+        self.Id = id
+        self.Date = date
+        self.Title = title
+        self.Description = description
+        self.People_main = people_main
+        self.Tags = tags
+        self.People_secondary = people_secondary
+        self.Public = public
+        self.Added_on = added_on
+        self.Added_by = added_by
+        self.Last_modified = last_modified
+        self.Significance = sign
+        self.Location = location
 
-app.layout = html.Div(children=[
-	html.H2('Recently added events'),
-	html.Hr(),
-	html.Div(children=[
-		material.Dialog(children=[
-			html.H2('Add new life event', style={'text-align': 'center'}),
-			html.Fieldset(id='new_event', children=[
-				html.Div(children=[
-					dcc.Input(id='event_title', placeholder='What happened?', value='',style={'width': '75%', 'padding': '5px', 'margin-bottom': '5px', 'height': '50px',
-					                                                                 'border-radius': '3px', 'font-size': '14px'}),
-					dcc.DatePickerSingle('event_date', style={'float': 'right', 'margin-left': '5px'}, placeholder='When?', initial_visible_month=d(2021, 1, 15),
-					                     display_format='DD.MM.Y', month_format='MMMM Y', first_day_of_week=2, day_size=30, className='datepicker'),], style={'display': 'flex'}),
-				html.Div(children=[
-					dcc.Dropdown(id='event_significance', options=[{'label': q, 'value': q} for q in significance.keys()], placeholder='Is it significant?',
-				                                multi=False, className='dropdown_single', style={'height': '50px'}),
-					dcc.Dropdown(id='event_person', placeholder='Whose story is it?', options=[{'label': z, 'value': z} for z in names], multi=False,
-					             className='dropdown_single', style={'height': '50px', 'float': 'right'}),], style={'display': 'flex'}),
-				dcc.Textarea(id='event_description', placeholder='How it happened? Details, please', value='', className='desc'),
-				html.Div(children=[
-					dcc.Dropdown(id='event_tags', multi=True, options=[{'label': a, 'value': a} for a in tags], className='dropdown_multi', placeholder='What kind of event is '
-					                                                                                                                                    'it?', style={'height': '50px'}),
-					dcc.Dropdown(id='people_involved', multi=True, options=[{'label': z, 'value': z} for z in names], className='dropdown_multi', placeholder='Who else was involved?',
-					             style={'height': '50px'}),], style={'display': 'flex'}),
-			], className='fieldset'),
-			dcc.Checklist(id='public', options=[{'label': 'public', 'value': 'public'}], value=['public'], style={'font-size' : '18px', 'display': 'block',
-			                                                                                                      'margin-top': '5px'}),
-			html.Div(children=[
-				html.Div(id='message'),
-				material.Button(children='Save', id='savior', variant='outlined', n_clicks=0, className='butt')
-			], id='save_div'),
-		], id='dialog', open=False, useBrowserSideClose=True, className='dialog', scroll='body'),
-		html.Div(id='input', children=[
-			material.Button(children='Add new record', id='add_new_record', variant='outlined', className='butt')]),
-	]),
-	dcc.Interval(id='interval', interval=5, n_intervals=0),
-	html.Div(id='table')
-])
+
+ttl = bootstrap.FormGroup( # title
+    [
+        bootstrap.Label("Title", html_for="event_title"),
+        bootstrap.Input(type="text", id="event_title", placeholder="What happened?", required=True,
+                        style={'width': '100%', 'height': '50px'}),
+    ]
+)
+
+ddt = bootstrap.FormGroup( # date
+    [
+        bootstrap.Label("Date", html_for="event_date"),
+        dcc.DatePickerSingle(
+            "event_date",
+            style={'display': 'flex', 'border-radius': '3px', 'overflow': 'visible', 'font-size': '14px'},
+            placeholder="When?",
+            initial_visible_month=d(2021, 1, 15),
+            display_format="DD.MM.Y",
+            month_format="MMMM Y",
+            first_day_of_week=2,
+            day_size=30,
+        ),
+    ]
+)
+
+prs = bootstrap.FormGroup( # person
+    [
+        bootstrap.Label("Primary people", html_for="people_m"),
+        dcc.Dropdown(
+            id="people_m",
+            multi=True,
+            options=[{"label": z, "value": z} for z in names],
+            className="dropdown_multi",
+            placeholder="Who was in the center?",
+            style={"height": "50px", 'width': '98%'},
+        ),
+    ]
+)
+
+sgn = bootstrap.FormGroup( # significance
+    [
+        bootstrap.Label("Significance", html_for="event_significance"),
+        bootstrap.Select(
+            id="event_significance",
+            placeholder="Is it serious?",
+            options=[{"label": q, "value": q} for q in significance.values()],
+            required=True,
+            style={'height': '50px'}
+        ),
+    ]
+)
+
+dsc = bootstrap.FormGroup( # description
+    [
+        bootstrap.Label("Description", html_for="event_description"),
+        bootstrap.Textarea(id="event_description", placeholder="How did it happen?",
+                           style={'width': '100%', 'height': '150px'}),
+    ]
+)
+
+tgs = bootstrap.FormGroup( # tags (type)
+    [
+        bootstrap.Label("Type", html_for="event_tags"),
+        dcc.Dropdown(
+            id="event_tags",
+            multi=True,
+            options=[{"label": a, "value": a} for a in tags],
+            className="dropdown_multi",
+            placeholder="What kind of event is it?",
+            style={"height": "50px", 'width': '98%'},
+        ),
+    ]
+)
+
+nvl = bootstrap.FormGroup( # people involved
+    [
+        bootstrap.Label("Other people involved", html_for="people_involved"),
+        dcc.Dropdown(
+            id="people_involved",
+            multi=True,
+            options=[{"label": z, "value": z} for z in names],
+            className="dropdown_multi",
+            placeholder="Who else was involved?",
+            style={"height": "50px", 'width': '98%'},
+        ),
+    ]
+)
+
+pbl = bootstrap.FormGroup( # public or private
+    [
+        bootstrap.Checkbox(id="public_check", checked=True),
+        bootstrap.Label("public", html_for="public_check", style={'margin-left': '3px'}),
+    ],
+    check=True,
+)
+
+lcc = bootstrap.FormGroup( # location
+    [
+        bootstrap.Label("Location", html_for="event_location"),
+        bootstrap.Input(type="text", id="event_location", placeholder="Where?",
+                        style={'height': '50px'}),
+    ]
+)
+
+app.layout = html.Div(
+    children=[
+        html.H2("Recently added events"),
+        html.Hr(),
+        bootstrap.Row(children=[
+            bootstrap.Col(id='filters_placeholder', width=9),
+            bootstrap.Col(bootstrap.Button("Add record", id="open_modal", n_clicks=0, style={'float': 'right', 'margin-right': '50px'}), width=3),]
+        ),
+        bootstrap.Modal(
+            [
+                bootstrap.ModalHeader("Add new life event"),
+                bootstrap.ModalBody(
+                    [bootstrap.Form([
+                            bootstrap.Row(
+                                [
+                                    bootstrap.Col([ttl], width=12)
+                                ]
+                            ),
+                            bootstrap.Row(
+                                [
+                                    bootstrap.Col([ddt], width=3),
+                                    bootstrap.Col([lcc], width=9),
+                                ]
+                            ),
+                            bootstrap.Row(
+                                [
+                                    bootstrap.Col([prs], width=6),
+                                    bootstrap.Col([sgn], width=6),
+                                ]
+                            ),
+                            bootstrap.Row([bootstrap.Col([dsc], width=12)]),
+                            bootstrap.Row(
+                                [
+                                    bootstrap.Col([tgs], width=6),
+                                    bootstrap.Col([nvl], width=6),
+                                ]
+                            ),
+                            bootstrap.Row([pbl]),
+                            bootstrap.Row(
+                                [
+                                    bootstrap.Col(
+                                        [], width=9),
+                                    bootstrap.Col(
+                                        [
+                                            bootstrap.Button("Save", id="savior_button", n_clicks=0, className='savior_button', color='primary', type='submit')
+                                        ], width=3),
+                                ]
+                            ),
+                    ], id='modal_form', n_submit=0)]
+                ),
+            ],
+            id="event_modal",
+            is_open=False,
+            className= 'modal_window'
+        ),
+        dcc.Interval(id='interval', interval=(864000/36), n_intervals=0),
+        html.Div(id="events_table")
+    ]
+)
 server = app.server
 
-@app.callback(
-	Output('table', 'children'),
-	Input('interval', 'n_intervals')
-)
+
+@app.callback(Output("events_table", "children"), Input("interval", "n_intervals"))
 def display_table(n_intervals):
-	df = pd.read_sql_table('events', con=db.engine)
-	# print(df)
-	return [
-		dash_table.DataTable(id='events_table', data=df.to_dict('records'),
-		                     columns=[{'name': y, 'id': y, 'deletable': False} for y in ['title', 'date', 'the_person', 'description', 'tags', 'people_involved', 'public', 'added_on', 'significance']])
-	]
+    df = pd.read_sql_table("events", con=db.engine)
+
+    h = pd.Series([
+        '\n'.join(name_for_id(b) for b in an) for an in df['people_involved']
+    ])
+
+    people_involved = pd.Series([
+        '\n'.join(name_for_id(b) for b in an) for an in df['people_involved']
+    ])
+
+    event_date = pd.Series([
+        display_human_date(da) for da in df['date']
+    ])
+
+    date_added = pd.Series([
+        display_human_date(da) for da in df['added_on']
+    ])
+
+    df_modified = pd.DataFrame({'Title': df['title'], 'Date': event_date, 'Persona': h, 'Description': df['description'], 'Location': df['location'], 'Tags': df['tags'],
+                                'People involved': people_involved, 'Date added': date_added})
+    return [
+        dash_table.DataTable(
+            id="events_table",
+            data=df_modified.to_dict("records"),
+            columns=[
+                {"name": y, "id": y, "deletable": False}
+                for y in df_modified.columns
+            ], style_table={'margin-left': '15px', 'width': '98%', 'margin-top': '15px'}
+        )
+    ]
+
 
 @app.callback(
-	Output('dialog', 'open'),
-	Output('add_new_record', 'n_clicks'),
-	Output('savior', 'n_clicks'),
-	Input('add_new_record', 'n_clicks'),
-	Input('savior', 'n_clicks'),
-	State('dialog', 'open')
+    Output('event_modal', 'is_open'),
+    Input('modal_form', 'n_submit'),
+    Input('open_modal', 'n_clicks'),
+    State('event_modal', 'is_open'),
+    State("event_date", "date"),
+    State("event_title", "value"),
+    State("event_significance", "value"),
+    State("event_description", "value"),
+    State("people_m", "value"),
+    State("event_tags", "value"),
+    State("people_involved", "value"),
+    State("public_check", "checked"),
+    State('event_location', 'value'), prevent_initial_call=True
 )
-def toggle_event_form(open_clicks, close_clicks, state):
-	if not state and (open_clicks > 0):
-		return True, 1, 0
-	elif state and (close_clicks > 0):
-		sleep(1.5)
-		return False, 0, 1
+def save_data(submit_form, open_modal, is_open, event_date, event_title, event_nificance, event_desc, people_m, event_ags, people_s, public_check, loc):
+    if not open_modal:
+        return
+    added_on = last_modified = dt.today()
+    people_main = []
+    if people_m:
+        for p in people_m:
+            people_main.append(
+                id_for_name(p)
+            )
 
-@app.callback(
-	Output('message', 'children'),
-	Input('savior', 'n_clicks'),
-	State('event_date', 'date'),
-	State('event_title', 'value'),
-	State('event_significance', 'value'),
-	State('event_description', 'value'),
-	State('event_person', 'value'),
-	State('event_tags', 'value'),
-	State('people_involved', 'value'),
-	State('public', 'value'),
-	State('dialog', 'open'), prevent_initial_call=True
-)
-def add_new_data(save, date, title, sign, desc, person, tags, others, public, modal_state):
+    people_involved = []
+    if people_s:
+        for p in people_s:
+            people_involved.append(
+                id_for_name(p)
+            )
+    if event_nificance:
+        for k,v in significance.items():
+            if v == event_nificance:
+                s = k
+    else:
+        s = significance[2]
 
-	no_output = html.Plaintext("Please, complete all the fields")
-	output = html.Plaintext("The data has been saved to your PostgreSQL database")
+    if all([event_date, event_title, event_nificance, event_desc, people_m, event_ags, people_s, loc]):
+        added_by = 1  # TODO
 
-	if modal_state:
-		# print(date, title, sign, desc, person, tags, others, public)
-		added_on = last_modified = dt.today()
-		added_by = 1 # TODO
+        pcheck = bool(public_check)
+        idd = 0
+        location = loc
 
-		# assert person is not None
-		person_id = loud_equery(connect, f"""SELECT id FROM people WHERE (fname || ' ' || lname) = '{person}'""")[0][0]
+        # current_event = Event(idd, event_title, event_date, json.dumps(people_main), event_desc, json.dumps(event_ags), json.dumps(people_involved), pcheck, added_on, added_by,
+        #                       last_modified, s, location)
+        # pg = pd.DataFrame(current_event)
+        pg = pd.DataFrame(
+            data=[
+                (
+                    event_title,
+                    event_date,
+                    json.dumps(people_main),
+                    event_desc,
+                    json.dumps(event_ags),
+                    json.dumps(people_involved),
+                    pcheck,
+                    added_on,
+                    added_by,
+                    last_modified,
+                    s,
+                    loc
+                )
+            ],
+            columns=[
+                "title",
+                "date",
+                "the_person",
+                "description",
+                "tags",
+                "people_involved",
+                "public",
+                "added_on",
+                "added_by",
+                "last_modified",
+                "significance",
+                "location"
+            ],
+        )
 
-		# assert others is not None
-		people_involved = []
-		for p in others:
-			people_involved.append(loud_equery(connect, f"""SELECT id FROM people WHERE (fname || ' ' || lname) = '{p}'""")[0][0])
+    if submit_form:
+        pg.to_sql("events", con=db.engine, if_exists="append", index=False)
+        return not is_open
+    return not is_open
 
-		# assert public is not None
-		if len(public) > 0:
-			pbl = True
-		else:
-			pbl = False
 
-		# assert sign is not None
-		s = significance[sign]
-
-		# if date is not None and title is not None and desc is not None and person is not None:
-		# assert title is not None
-		# assert date is not None
-		# assert desc is not None
-		pg = pd.DataFrame(data=[(title, date, person_id, desc, json.dumps(tags), json.dumps(people_involved), pbl, added_on, added_by, last_modified, s)],
-		                  columns=['title', 'date', 'the_person', 'description', 'tags', 'people_involved', 'public', 'added_on', 'added_by', 'last_modified', 'significance'])
-		# else:
-		# 	pg = None
-
-		if save > 0:
-			pg.to_sql('events', con=db.engine, if_exists='append', index=False)
-			return output
-		else:
-			return no_output
-
-# @app.callback(
-# 	Output('events_table', 'data'),
-# 	Input('add_new_record', 'n_clicks'),
-# 	State('events_table', 'data'),
-# 	State('events_table', 'columns')
-# )
-# def add_row(n_clicks, rows, columns):
-# 	if n_clicks > 0:
-# 		rows.append({c['id']: '' for c in columns})
-# 	return rows
-
-if __name__ == '__main__':
-	app.run_server(port=8050, debug=True)
-	# app.run_server(port=8050, debug=False)
+if __name__ == "__main__":
+    # app.run_server(port=8050, debug=True)
+    app.run_server(port=8050, debug=False)

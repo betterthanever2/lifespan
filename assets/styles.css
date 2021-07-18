@@ -62,3 +62,11 @@
 	resize: both;
 	display: block;
 }
+
+.modal_window {
+	min-width: 600px;
+}
+
+.savior_button {
+	width: 100px;
+}
