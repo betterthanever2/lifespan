@@ -27,6 +27,7 @@ def display_human_date(timestamp):
 people_query = """SELECT (fname || ' ' || lname) FROM people"""
 people = loud_equery(connect, people_query)
 names = [name[0] for name in people]
+print(names)
 
 tags = [
     "fundamental",
