@@ -1,6 +1,21 @@
 """
 Functions used to connect, query and modify the events DB
 
+Host
+    ec2-54-228-174-49.eu-west-1.compute.amazonaws.com
+Database
+    d56rpgtdtdbf74
+User
+    fbqdnsjrufapee
+Port
+    5432
+Password
+    d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21
+URI
+    postgres://fbqdnsjrufapee:d45f7a8ff55236b9778abbacb443a792d73597718c3a761175f5879a49e3ca21@ec2-54-228-174-49.eu-west-1.compute.amazonaws.com:5432/d56rpgtdtdbf74
+Heroku CLI
+    heroku pg:psql postgresql-transparent-54244 --app lifespan2
+
 """
 import psycopg2
 from psycopg2 import OperationalError
