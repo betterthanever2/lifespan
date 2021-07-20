@@ -351,7 +351,7 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
     else:
         s = significance[2]
 
-    if all([event_date, event_title, event_nificance, event_desc, people_m, event_ags, people_s, loc]):
+    if all([event_date, event_title, event_nificance, event_desc, people_m, event_ags, loc]):
         added_by = 1  # TODO
 
         pcheck = bool(public_check)
