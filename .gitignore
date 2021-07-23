@@ -5,3 +5,4 @@ sql.py
 /etc
 /share
 pyvenv.cfg
+/.idea

@@ -298,7 +298,6 @@ def display_table(n_intervals):
     people_involved = pd.Series([
         '; '.join(name_for_id(b) for b in an) for an in df['people_involved']
     ], dtype='object')
-    # print(people_involved)
 
     tg = pd.Series(['; '.join(an) for an in df['tags']], dtype='object')
 
@@ -389,7 +388,7 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
 
         pcheck = bool(public_check)
         # idd = 0
-        location = loc
+        location = loc #TODO: get actual locations
 
         # current_event = Event(idd, event_title, event_date, json.dumps(people_main), event_desc, json.dumps(event_ags), json.dumps(people_involved), pcheck, added_on, added_by,
         #                       last_modified, s, location)
@@ -428,12 +427,11 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
         )
 
     if submit_form:
-        # print(pg)
         pg.to_sql("events", con=db.engine, if_exists="append", index=False)
         return (not is_open), a
     return not is_open, b
 
 
 if __name__ == "__main__":
-    app.run_server(port=8050, debug=True)
-    # app.run_server(port=8050, debug=False)
+    # app.run_server(port=8050, debug=True)
+    app.run_server(port=8050, debug=False)
