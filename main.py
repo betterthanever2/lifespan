@@ -39,6 +39,8 @@ tags = [
     "violence",
     "state",
     "work",
+    "programming",
+    "medical"
 ]
 significance = {1: "very", 3: "not really", 2: "somewhat", 4: "not at all"}
 
@@ -290,6 +292,7 @@ server = app.server
 @app.callback(Output("events_table", "children"), Input("interval", "n_intervals"))
 def display_table(n_intervals):
     df = pd.read_sql_table("events", con=db.engine)
+    df.sort_values(by='date', inplace=True, ascending=False, ignore_index=True)
 
     h = pd.Series([
         '; '.join(name_for_id(b) for b in an) for an in df['the_person']
@@ -301,20 +304,22 @@ def display_table(n_intervals):
 
     tg = pd.Series(['; '.join(an) for an in df['tags']], dtype='object')
 
-    event_date = pd.Series([
-        display_human_date(da) for da in df['date']
-    ], dtype='object')
+    df_modified = pd.DataFrame({
+        'Title': df['title'],
+        'Date': map(display_human_date, df['date']),
+        'Persona': h,
+        'Description': df['description'],
+        'Location': df['location'],
+        'Tags': tg,
+        'People involved': people_involved,
+        'Date added': map(display_human_date, df['added_on']),})
 
-    date_added = pd.Series([
-        display_human_date(da) for da in df['added_on']
-    ], dtype='object')
-
-    df_modified = pd.DataFrame({'Title': df['title'], 'Date': event_date, 'Persona': h, 'Description': df['description'], 'Location': df['location'], 'Tags': tg,
-                                'People involved': people_involved, 'Date added': date_added})
     return [
         dash_table.DataTable(
             id="events_table",
             data=df_modified.to_dict("records"),
+            sort_action='native',
+            sort_mode='single',
             columns=[
                 {"name": y, "id": y, "deletable": False}
                 for y in df_modified.columns
@@ -433,5 +438,5 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
 
 
 if __name__ == "__main__":
-    # app.run_server(port=8050, debug=True)
-    app.run_server(port=8050, debug=False)
+    app.run_server(port=8050, debug=True)
+    # app.run_server(port=8050, debug=False)
