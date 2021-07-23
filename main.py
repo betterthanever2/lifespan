@@ -27,7 +27,7 @@ def display_human_date(timestamp):
 people_query = """SELECT (fname || ' ' || lname) FROM people"""
 people = loud_equery(connect, people_query)
 names = [name[0] for name in people]
-print(names)
+# print(names)
 
 tags = [
     "fundamental",
@@ -114,7 +114,12 @@ class Event(db.Model):
 ttl = bootstrap.FormGroup( # title
     [
         bootstrap.Label("Title", html_for="event_title"),
-        bootstrap.Input(type="text", id="event_title", placeholder="What happened?", required=True,
+        bootstrap.Input(type="text", id="event_title",
+                        placeholder="What happened?",
+                        # required=True,
+                        autoFocus=True,
+                        debounce=True,
+                        persistence=False,
                         style={'width': '100%', 'height': '50px'}),
     ]
 )
@@ -126,7 +131,7 @@ ddt = bootstrap.FormGroup( # date
             "event_date",
             style={'display': 'flex', 'border-radius': '3px', 'overflow': 'visible', 'font-size': '14px'},
             placeholder="When?",
-            initial_visible_month=d(2021, 1, 15),
+            initial_visible_month=dt.today(),
             display_format="DD.MM.Y",
             month_format="MMMM Y",
             first_day_of_week=2,
@@ -144,7 +149,9 @@ prs = bootstrap.FormGroup( # person
             options=[{"label": z, "value": z} for z in names],
             className="dropdown_multi",
             placeholder="Who was in the center?",
+            persistence=False,
             style={"height": "50px", 'width': '98%'},
+            # value=names[0]
         ),
     ]
 )
@@ -157,6 +164,7 @@ sgn = bootstrap.FormGroup( # significance
             placeholder="Is it serious?",
             options=[{"label": q, "value": q} for q in significance.values()],
             required=True,
+            persistence=False,
             style={'height': '50px'}
         ),
     ]
@@ -179,6 +187,7 @@ tgs = bootstrap.FormGroup( # tags (type)
             options=[{"label": a, "value": a} for a in tags],
             className="dropdown_multi",
             placeholder="What kind of event is it?",
+            persistence=False,
             style={"height": "50px", 'width': '98%'},
         ),
     ]
@@ -193,6 +202,7 @@ nvl = bootstrap.FormGroup( # people involved
             options=[{"label": z, "value": z} for z in names],
             className="dropdown_multi",
             placeholder="Who else was involved?",
+            persistence=False,
             style={"height": "50px", 'width': '98%'},
         ),
     ]
@@ -216,7 +226,7 @@ lcc = bootstrap.FormGroup( # location
 
 app.layout = html.Div(
     children=[
-        html.H2("Recently added events"),
+        html.H2("Events of life: Large & Small"),
         html.Hr(),
         bootstrap.Row(children=[
             bootstrap.Col(id='filters_placeholder', width=9),
@@ -282,22 +292,25 @@ def display_table(n_intervals):
     df = pd.read_sql_table("events", con=db.engine)
 
     h = pd.Series([
-        '\n'.join(name_for_id(b) for b in an) for an in df['the_person']
-    ])
+        '; '.join(name_for_id(b) for b in an) for an in df['the_person']
+    ], dtype='object')
 
     people_involved = pd.Series([
-        '\n'.join(name_for_id(b) for b in an) for an in df['people_involved']
-    ])
+        '; '.join(name_for_id(b) for b in an) for an in df['people_involved']
+    ], dtype='object')
+    # print(people_involved)
+
+    tg = pd.Series(['; '.join(an) for an in df['tags']], dtype='object')
 
     event_date = pd.Series([
         display_human_date(da) for da in df['date']
-    ])
+    ], dtype='object')
 
     date_added = pd.Series([
         display_human_date(da) for da in df['added_on']
-    ])
+    ], dtype='object')
 
-    df_modified = pd.DataFrame({'Title': df['title'], 'Date': event_date, 'Persona': h, 'Description': df['description'], 'Location': df['location'], 'Tags': df['tags'],
+    df_modified = pd.DataFrame({'Title': df['title'], 'Date': event_date, 'Persona': h, 'Description': df['description'], 'Location': df['location'], 'Tags': tg,
                                 'People involved': people_involved, 'Date added': date_added})
     return [
         dash_table.DataTable(
@@ -306,7 +319,23 @@ def display_table(n_intervals):
             columns=[
                 {"name": y, "id": y, "deletable": False}
                 for y in df_modified.columns
-            ], style_table={'margin-left': '15px', 'width': '98%', 'margin-top': '15px'}
+            ],
+            style_table={'margin': '10px', 'width': '98%'},
+            style_header={'text-align': 'center'},
+            style_data={'whiteSpace': 'normal', 'height': 'auto', 'font-size': '14px'},
+            style_cell={'text-align': 'left'},
+            style_cell_conditional=[
+                {'if': {'column_id': 'Title'}, 'width': '15%'},
+                {'if': {'column_id': 'Date'}, 'width': '10%', 'text-align': 'center'},
+                {'if': {'column_id': 'Persona'}, 'width': '10%'},
+                {'if': {'column_id': 'Description'}, 'width': '25%'},
+                {'if': {'column_id': 'Location'}, 'width': '10%'},
+                {'if': {'column_id': 'Tags'}, 'width': '10%'},
+                {'if': {'column_id': 'People involved'}, 'width': '10%'},
+                {'if': {'column_id': 'Date added'}, 'width': '10%', 'text-align': 'center'},
+            ],
+            page_action='native',
+            page_size = 50,
         )
     ]
 
@@ -328,10 +357,14 @@ def display_table(n_intervals):
     State('event_location', 'value'), prevent_initial_call=True
 )
 def save_data(submit_form, open_modal, is_open, event_date, event_title, event_nificance, event_desc, people_m, event_ags, people_s, public_check, loc):
+    a = html.Meta(httpEquiv="refresh",content="1")
+    b = html.Div()
+
     if not open_modal:
         return
     added_on = last_modified = dt.today()
     people_main = []
+
     if people_m:
         for p in people_m:
             people_main.append(
@@ -355,7 +388,7 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
         added_by = 1  # TODO
 
         pcheck = bool(public_check)
-        idd = 0
+        # idd = 0
         location = loc
 
         # current_event = Event(idd, event_title, event_date, json.dumps(people_main), event_desc, json.dumps(event_ags), json.dumps(people_involved), pcheck, added_on, added_by,
@@ -393,14 +426,14 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
                 "location"
             ],
         )
-    a = html.Meta(httpEquiv="refresh",content="3")
-    b = html.Div()
+
     if submit_form:
+        # print(pg)
         pg.to_sql("events", con=db.engine, if_exists="append", index=False)
         return (not is_open), a
     return not is_open, b
 
 
 if __name__ == "__main__":
-    # app.run_server(port=8050, debug=True)
-    app.run_server(port=8050, debug=False)
+    app.run_server(port=8050, debug=True)
+    # app.run_server(port=8050, debug=False)
