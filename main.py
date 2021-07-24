@@ -38,9 +38,14 @@ tags = [
     "state",
     "work",
     "programming",
+    "python",
     "medical",
     "financial",
-    "new person"
+    "new person",
+    "moving on",
+    "the net",
+    "weeee",
+    "consumerism"
 ]
 significance = {1: "very", 2: "somewhat", 3: "not really", 4: "not at all"}
 
