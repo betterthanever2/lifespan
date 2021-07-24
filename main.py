@@ -228,10 +228,13 @@ lcc = bootstrap.FormGroup( # location
 
 app.layout = html.Div(
     children=[
-        html.H2("Events of life: Large & Small"),
+        html.H2("Events of Life: Large & Small"),
         html.Hr(),
         bootstrap.Row(children=[
-            bootstrap.Col(id='filters_placeholder', width=9),
+            bootstrap.Col(id='ev_count', children=[
+                html.Div(id='events_counter')
+            ], width=3),
+            bootstrap.Col(id='filters_placeholder', width=6),
             bootstrap.Col(bootstrap.Button("Add record", id="open_modal", n_clicks=0, style={'float': 'right', 'margin-right': '50px'}), width=3),]
         ),
         bootstrap.Modal(
@@ -289,7 +292,9 @@ app.layout = html.Div(
 server = app.server
 
 
-@app.callback(Output("events_table", "children"), Input("interval", "n_intervals"))
+@app.callback(Output("events_table", "children"),
+              Output('events_counter', 'children'),
+              Input("interval", "n_intervals"))
 def display_table(n_intervals):
     df = pd.read_sql_table("events", con=db.engine)
     df.sort_values(by='date', inplace=True, ascending=False, ignore_index=True)
@@ -313,6 +318,8 @@ def display_table(n_intervals):
         'Tags': tg,
         'People involved': people_involved,
         'Date added': map(display_human_date, df['added_on']),})
+
+    cnt = loud_equery(connect, "SELECT COUNT(*) FROM events")[0][0]
 
     return [
         dash_table.DataTable(
@@ -341,7 +348,7 @@ def display_table(n_intervals):
             page_action='native',
             page_size = 50,
         )
-    ]
+    ], f'Events total: {cnt}'
 
 
 @app.callback(
@@ -438,5 +445,5 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
 
 
 if __name__ == "__main__":
-    app.run_server(port=8050, debug=True)
-    # app.run_server(port=8050, debug=False)
+    # app.run_server(port=8050, debug=True)
+    app.run_server(port=8050, debug=False)
