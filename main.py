@@ -285,7 +285,7 @@ app.layout = html.Div(
             className= 'modal_window'
         ),
         dcc.Interval(id='interval', interval=(864000/36), n_intervals=0),
-        html.Div(id='refr'),
+        # html.Div(id='refr'),
         html.Div(id="events_table")
     ]
 )
@@ -353,7 +353,6 @@ def display_table(n_intervals):
 
 @app.callback(
     Output('event_modal', 'is_open'),
-    Output('refr', 'children'),
     Input('modal_form', 'n_submit'),
     Input('open_modal', 'n_clicks'),
     State('event_modal', 'is_open'),
@@ -368,8 +367,6 @@ def display_table(n_intervals):
     State('event_location', 'value'), prevent_initial_call=True
 )
 def save_data(submit_form, open_modal, is_open, event_date, event_title, event_nificance, event_desc, people_m, event_ags, people_s, public_check, loc):
-    a = html.Meta(httpEquiv="refresh",content="1")
-    b = html.Div()
 
     if not open_modal:
         return
@@ -440,8 +437,8 @@ def save_data(submit_form, open_modal, is_open, event_date, event_title, event_n
 
     if submit_form:
         pg.to_sql("events", con=db.engine, if_exists="append", index=False)
-        return (not is_open), a
-    return not is_open, b
+        return not is_open
+    return not is_open
 
 
 if __name__ == "__main__":
