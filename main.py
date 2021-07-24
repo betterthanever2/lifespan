@@ -33,16 +33,16 @@ tags = [
     "fundamental",
     "travel",
     "education",
-    "birth of child",
-    "marriage",
-    "divorce",
+    "family",
     "violence",
     "state",
     "work",
     "programming",
-    "medical"
+    "medical",
+    "financial",
+    "new person"
 ]
-significance = {1: "very", 3: "not really", 2: "somewhat", 4: "not at all"}
+significance = {1: "very", 2: "somewhat", 3: "not really", 4: "not at all"}
 
 server = Flask(__name__)
 app = dash.Dash(
@@ -232,7 +232,7 @@ app.layout = html.Div(
         html.Hr(),
         bootstrap.Row(children=[
             bootstrap.Col(id='ev_count', children=[
-                html.Div(id='events_counter')
+                html.Div(id='events_counter', style={'margin-left': '10px'})
             ], width=3),
             bootstrap.Col(id='filters_placeholder', width=6),
             bootstrap.Col(bootstrap.Button("Add record", id="open_modal", n_clicks=0, style={'float': 'right', 'margin-right': '50px'}), width=3),]
