@@ -12,6 +12,8 @@ from flask_sqlalchemy import SQLAlchemy
 # from time import sleep
 import json
 
+# TODO: prevent duplicates
+
 connect = create_connection()
 c = connect.cursor()
 
@@ -27,7 +29,6 @@ def display_human_date(timestamp):
 people_query = """SELECT (fname || ' ' || lname) FROM people"""
 people = loud_equery(connect, people_query)
 names = [name[0] for name in people]
-# print(names)
 
 tags = [
     "fundamental",
@@ -302,6 +303,7 @@ server = app.server
               Input("interval", "n_intervals"))
 def display_table(n_intervals):
     df = pd.read_sql_table("events", con=db.engine)
+    df = df[df['public'] == True]
     df.sort_values(by='date', inplace=True, ascending=False, ignore_index=True)
 
     h = pd.Series([
